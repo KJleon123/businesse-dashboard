@@ -1,26 +1,19 @@
 """
 Business Dashboard — app.py
 
-Application Flask : authentification, lecture des transactions en base MySQL,
-calcul des statistiques financières et rendu du tableau de bord.
+Application Flask : authentification et tableau de bord de démonstration.
 
 Lancement en local :
     python app.py
-
-Création d'un utilisateur :
-    flask --app app create-user "Awa Koné" awa@exemple.com motdepasse
 """
 
-from datetime import date, datetime
+from datetime import datetime
 from functools import wraps
 
-import pymysql
-import pymysql.cursors
 from flask import (
-    Flask, flash, g, redirect, render_template,
+    Flask, flash, redirect, render_template,
     request, session, url_for,
 )
-from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import Config
 
@@ -55,55 +48,6 @@ def format_fcfa(value):
     return f"{montant:,}".replace(",", " ") + f" {Config.CURRENCY}"
 
 
-# ==========================================================================
-# 3. Base de données
-# ==========================================================================
-# Vercel exécute l'application en mode serverless : aucune connexion ne peut
-# rester ouverte entre deux requêtes. On ouvre donc une connexion par requête
-# et on la referme systématiquement à la fin (teardown_appcontext).
-
-def get_db():
-    """Renvoie la connexion MySQL de la requête en cours, en la créant au besoin."""
-    if "db" not in g:
-        g.db = pymysql.connect(
-            cursorclass=pymysql.cursors.DictCursor,
-            **Config.db_params(),
-        )
-    return g.db
-
-
-@app.teardown_appcontext
-def close_db(exception=None):
-    db = g.pop("db", None)
-    if db is not None:
-        try:
-            db.close()
-        except Exception:  # noqa: BLE001 — la fermeture ne doit jamais casser la réponse
-            pass
-
-
-def query_all(sql, params=()):
-    with get_db().cursor() as cursor:
-        cursor.execute(sql, params)
-        return cursor.fetchall()
-
-
-def query_one(sql, params=()):
-    with get_db().cursor() as cursor:
-        cursor.execute(sql, params)
-        return cursor.fetchone()
-
-
-def user_scope():
-    """
-    Restreint les requêtes aux données de l'utilisateur connecté lorsque la
-    table transactions possède une colonne user_id (voir Config.SCOPE_BY_USER).
-    Renvoie un fragment SQL et ses paramètres.
-    """
-    if Config.SCOPE_BY_USER and session.get("user_id"):
-        return " AND user_id = %s", [session["user_id"]]
-    return "", []
-
 
 # ==========================================================================
 # 4. Authentification
@@ -135,135 +79,6 @@ def current_user():
 def inject_user():
     """Rend `user` disponible dans tous les templates, y compris base.html."""
     return {"user": current_user()}
-
-
-# ==========================================================================
-# 5. Lecture des données et calculs financiers
-# ==========================================================================
-# Attention : PyMySQL utilise le caractère % pour ses paramètres. Dans les
-# fonctions SQL comme DATE_FORMAT, le % littéral doit donc être doublé (%%Y).
-
-def to_float(value):
-    """Convertit les Decimal renvoyés par MySQL en nombres sérialisables en JSON."""
-    return float(value) if value is not None else 0.0
-
-
-def month_range(count):
-    """
-    Renvoie les `count` derniers mois sous forme de couples (clé, libellé) :
-    [('2026-04', 'avr. 26'), ('2026-05', 'mai 26'), …]
-    """
-    today = date.today()
-    months = []
-    year, month = today.year, today.month
-
-    for _ in range(count):
-        months.append((f"{year:04d}-{month:02d}", f"{MOIS_COURTS[month - 1]} {year % 100:02d}"))
-        month -= 1
-        if month == 0:
-            month, year = 12, year - 1
-
-    return list(reversed(months))
-
-
-def fetch_totals():
-    """Chiffre d'affaires, dépenses, bénéfice et nombre de transactions."""
-    scope_sql, params = user_scope()
-    row = query_one(
-        f"""
-        SELECT
-            COALESCE(SUM(CASE WHEN type = 'revenu'  THEN montant END), 0) AS revenus,
-            COALESCE(SUM(CASE WHEN type = 'depense' THEN montant END), 0) AS depenses,
-            COUNT(*) AS nb_transactions
-        FROM transactions
-        WHERE 1 = 1 {scope_sql}
-        """,
-        params,
-    ) or {}
-
-    revenus = to_float(row.get("revenus"))
-    depenses = to_float(row.get("depenses"))
-
-    return {
-        "revenus": revenus,
-        "depenses": depenses,
-        "benefice": revenus - depenses,
-        "transactions": int(row.get("nb_transactions") or 0),
-    }
-
-
-def fetch_monthly_series():
-    """Séries mensuelles des revenus, des dépenses et du bénéfice."""
-    months = month_range(Config.DASHBOARD_MONTHS)
-    premier_mois = months[0][0] + "-01"
-
-    scope_sql, params = user_scope()
-    rows = query_all(
-        f"""
-        SELECT
-            DATE_FORMAT(date_transaction, '%%Y-%%m') AS periode,
-            COALESCE(SUM(CASE WHEN type = 'revenu'  THEN montant END), 0) AS revenus,
-            COALESCE(SUM(CASE WHEN type = 'depense' THEN montant END), 0) AS depenses
-        FROM transactions
-        WHERE date_transaction >= %s {scope_sql}
-        GROUP BY periode
-        ORDER BY periode
-        """,
-        [premier_mois] + params,
-    )
-
-    par_periode = {row["periode"]: row for row in rows}
-
-    labels, revenus, depenses, benefice = [], [], [], []
-    for cle, libelle in months:
-        ligne = par_periode.get(cle)
-        r = to_float(ligne["revenus"]) if ligne else 0.0
-        d = to_float(ligne["depenses"]) if ligne else 0.0
-
-        labels.append(libelle)
-        revenus.append(r)
-        depenses.append(d)
-        benefice.append(r - d)
-
-    return {"mois": labels, "revenus": revenus, "depenses": depenses, "benefice": benefice}
-
-
-def fetch_categories():
-    """Répartition des dépenses par catégorie, des plus lourdes aux plus légères."""
-    scope_sql, params = user_scope()
-    rows = query_all(
-        f"""
-        SELECT
-            COALESCE(NULLIF(TRIM(categorie), ''), 'Autres') AS categorie,
-            SUM(montant) AS total
-        FROM transactions
-        WHERE type = 'depense' {scope_sql}
-        GROUP BY categorie
-        ORDER BY total DESC
-        LIMIT {Config.MAX_CATEGORIES}
-        """,
-        params,
-    )
-
-    return {
-        "labels": [row["categorie"] for row in rows],
-        "montants": [to_float(row["total"]) for row in rows],
-    }
-
-
-def fetch_recent_transactions():
-    """Dernières transactions affichées dans le tableau."""
-    scope_sql, params = user_scope()
-    return query_all(
-        f"""
-        SELECT id, type, description, categorie, montant, date_transaction
-        FROM transactions
-        WHERE 1 = 1 {scope_sql}
-        ORDER BY date_transaction DESC, id DESC
-        LIMIT {Config.RECENT_TRANSACTIONS}
-        """,
-        params,
-    )
 
 
 # ==========================================================================
@@ -710,38 +525,6 @@ def dashboard():
 def page_introuvable(error):
     flash("Cette page n'existe pas.", "info")
     return redirect(url_for("dashboard" if session.get("user_id") else "login")), 302
-
-
-# ==========================================================================
-# 7. Commandes en ligne de commande
-# ==========================================================================
-
-@app.cli.command("create-user")
-def create_user_command():
-    """Crée un utilisateur avec un mot de passe correctement hashé."""
-    import click
-
-    name = click.prompt("Nom complet")
-    email = click.prompt("Adresse e-mail").strip().lower()
-    password = click.prompt("Mot de passe", hide_input=True, confirmation_prompt=True)
-
-    if len(password) < 8:
-        click.echo("Le mot de passe doit contenir au moins 8 caractères.")
-        return
-
-    hash_mdp = generate_password_hash(password)
-
-    try:
-        with get_db().cursor() as cursor:
-            cursor.execute(
-                "INSERT INTO users (name, email, password) VALUES (%s, %s, %s)",
-                [name, email, hash_mdp],
-            )
-        click.echo(f"Utilisateur créé : {email}")
-    except pymysql.err.IntegrityError:
-        click.echo("Cette adresse e-mail est déjà utilisée.")
-    except pymysql.MySQLError as erreur:
-        click.echo(f"Création impossible : {erreur}")
 
 
 
