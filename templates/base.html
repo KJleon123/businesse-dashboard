@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#12213A">
+  <meta name="description" content="Suivi des revenus, des dépenses et du bénéfice de votre activité.">
+
+  <title>{% block title %}Business Dashboard{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  {% block head %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}page-app{% endblock %}">
+
+{# ----------------------------------------------------------------------
+   Le bloc "layout" contient la coquille de l'application (sidebar + topbar).
+   Les pages internes (dashboard) n'ont qu'à remplir "content".
+   Les pages sans coquille (login) redéfinissent "layout" en entier.
+   ---------------------------------------------------------------------- #}
+{% block layout %}
+<div class="layout">
+
+  <!-- ============================ SIDEBAR ============================ -->
+  <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+
+    <a class="brand" href="{{ url_for('dashboard') }}">
+      <span class="brand__mark" aria-hidden="true">BD</span>
+      <span class="brand__name">Business Dashboard</span>
+    </a>
+
+    <nav class="nav">
+      <a class="nav__link {% if request.endpoint == 'dashboard' %}is-active{% endif %}"
+         href="{{ url_for('dashboard') }}"
+         {% if request.endpoint == 'dashboard' %}aria-current="page"{% endif %}>
+        <svg class="nav__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6V11h-6v9Zm0-16v5h6V4h-6Z"/>
+        </svg>
+        Tableau de bord
+      </a>
+
+      <a class="nav__link {% if request.endpoint == 'transactions' %}is-active{% endif %}"
+        href="{{ url_for('transactions') }}"
+        {% if request.endpoint == 'transactions' %}aria-current="page"{% endif %}>
+
+          <svg class="nav__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 5h16v3H4V5Zm0 5.5h16v3H4v-3ZM4 16h10v3H4v-3Z"/>
+          </svg>
+
+          Transactions
+
+      </a>
+
+      <a class="nav__link {% if request.endpoint == 'reports' %}is-active{% endif %}"
+        href="{{ url_for('reports') }}"
+        {% if request.endpoint == 'reports' %}aria-current="page"{% endif %}>
+
+          <svg class="nav__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 19h14v2H5v-2Zm2-5h2v4H7v-4Zm4-6h2v10h-2V8Zm4 3h2v7h-2v-7ZM6.5 9.5 11 5l3 3 4.5-4.5"/>
+          </svg>
+
+          Rapports
+      </a>
+
+    <div class="sidebar__footer">
+
+      <a class="btn btn--ghost btn--block" href="{{ url_for('logout') }}">Se déconnecter</a>
+    </div>
+
+  </aside>
+
+  <div class="scrim" id="scrim" hidden></div>
+
+  <!-- ============================ CONTENU ============================ -->
+  <div class="app">
+
+    <header class="topbar">
+      <button class="icon-btn" id="menuToggle" type="button"
+              aria-label="Ouvrir la navigation" aria-controls="sidebar" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v2H4V6Zm0 5h16v2H4v-2Zm0 5h16v2H4v-2Z"/></svg>
+      </button>
+
+      <div class="topbar__title">
+        <h1>{% block page_title %}Tableau de bord{% endblock %}</h1>
+        {% block page_subtitle %}{% endblock %}
+      </div>
+
+      {% block topbar_actions %}{% endblock %}
+    </header>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="alerts">
+            {% for category, message in messages %}
+              <p class="alert alert--{{ category }}" role="status">{{ message }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+      <p>Business Dashboard — données mises à jour le {{ generated_at if generated_at else '' }}</p>
+    </footer>
+
+  </div>
+</div>
+{% endblock %}
+
+<!-- ============================ SCRIPTS ============================ -->
+<script>
+  // Ouverture / fermeture de la sidebar sur mobile.
+  (function () {
+    var toggle = document.getElementById('menuToggle');
+    var sidebar = document.getElementById('sidebar');
+    var scrim = document.getElementById('scrim');
+    if (!toggle || !sidebar || !scrim) return;
+
+    function setOpen(open) {
+      sidebar.classList.toggle('is-open', open);
+      scrim.hidden = !open;
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Fermer la navigation' : 'Ouvrir la navigation');
+    }
+
+    toggle.addEventListener('click', function () {
+      setOpen(!sidebar.classList.contains('is-open'));
+    });
+    scrim.addEventListener('click', function () { setOpen(false); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

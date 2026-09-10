@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Rapports — Business Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Rapports</h1>
+        <p>Analysez les performances financières de votre activité.</p>
+    </div>
+</div>
+
+
+<!-- STATISTIQUES -->
+
+<div class="stats-grid">
+
+    <div class="stat-card">
+        <span class="stat-card__label">Revenus</span>
+        <strong>{{ stats.revenus|fcfa }}</strong>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-card__label">Dépenses</span>
+        <strong>{{ stats.depenses|fcfa }}</strong>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-card__label">Bénéfice</span>
+        <strong>{{ stats.benefice|fcfa }}</strong>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-card__label">Marge</span>
+        <strong>{{ stats.marge }} %</strong>
+    </div>
+
+</div>
+
+
+<!-- GRAPHIQUES -->
+
+<div class="reports-grid">
+
+    <div class="card">
+
+        <div class="card-header">
+            <h2>Évolution financière</h2>
+            <span>6 derniers mois</span>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="reportsEvolutionChart"></canvas>
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="card-header">
+            <h2>Dépenses par catégorie</h2>
+        </div>
+
+        <div class="chart-container chart-container--small">
+            <canvas id="reportsCategoriesChart"></canvas>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- INDICATEURS -->
+
+<div class="card report-summary">
+
+    <div class="card-header">
+        <h2>Résumé financier</h2>
+    </div>
+
+    <div class="report-summary__content">
+
+        <div>
+            <span>Total des transactions</span>
+            <strong>{{ stats.transactions }}</strong>
+        </div>
+
+        <div>
+            <span>Revenu moyen</span>
+            <strong>{{ stats.revenu_moyen|fcfa }}</strong>
+        </div>
+
+        <div>
+            <span>Dépense moyenne</span>
+            <strong>{{ stats.depense_moyenne|fcfa }}</strong>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- DONNÉES POUR JAVASCRIPT -->
+
+<script>
+    const reportMonths = {{ charts.mois | tojson }};
+    const reportRevenus = {{ charts.revenus | tojson }};
+    const reportDepenses = {{ charts.depenses | tojson }};
+    const reportCategoriesLabels = {{ charts.categories.labels | tojson }};
+    const reportCategoriesValues = {{ charts.categories.montants | tojson }};
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='reports.js') }}"></script>
+
+{% endblock %}

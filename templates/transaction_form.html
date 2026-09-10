@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if transaction %}
+        Modifier une transaction
+    {% else %}
+        Ajouter une transaction
+    {% endif %}
+    — Business Dashboard
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>
+            {% if transaction %}
+                Modifier une transaction
+            {% else %}
+                Ajouter une transaction
+            {% endif %}
+        </h1>
+
+        <p>
+            {% if transaction %}
+                Modifiez les informations de cette transaction.
+            {% else %}
+                Enregistrez un nouveau revenu ou une nouvelle dépense.
+            {% endif %}
+        </p>
+    </div>
+
+    <a href="{{ url_for('transactions') }}" class="btn">
+        ← Retour
+    </a>
+
+</div>
+
+
+<div class="card transaction-form-card">
+
+    <form method="POST">
+
+        <!-- TYPE -->
+        <div class="form-group">
+
+            <label for="type">
+                Type de transaction
+            </label>
+
+            <select name="type" id="type" required>
+
+                <option value="">
+                    Sélectionnez un type
+                </option>
+
+                <option value="revenu"
+                    {% if transaction and transaction.type == "revenu" %}
+                        selected
+                    {% endif %}>
+                    Revenu
+                </option>
+
+                <option value="depense"
+                    {% if transaction and transaction.type == "depense" %}
+                        selected
+                    {% endif %}>
+                    Dépense
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- DESCRIPTION -->
+        <div class="form-group">
+
+            <label for="description">
+                Description
+            </label>
+
+            <input
+                type="text"
+                id="description"
+                name="description"
+                placeholder="Ex : Paiement client"
+                value="{{ transaction.description if transaction else '' }}"
+                required
+            >
+
+        </div>
+
+
+        <!-- CATEGORIE -->
+        <div class="form-group">
+
+            <label for="categorie">
+                Catégorie
+            </label>
+
+            <input
+                type="text"
+                id="categorie"
+                name="categorie"
+                placeholder="Ex : Marketing"
+                value="{{ transaction.categorie if transaction else '' }}"
+                required
+            >
+
+        </div>
+
+
+        <!-- MONTANT -->
+        <div class="form-group">
+
+            <label for="montant">
+                Montant (FCFA)
+            </label>
+
+            <input
+                type="number"
+                id="montant"
+                name="montant"
+                min="0"
+                step="1"
+                placeholder="Ex : 150000"
+                value="{{ transaction.montant if transaction else '' }}"
+                required
+            >
+
+        </div>
+
+
+        <!-- DATE -->
+        <div class="form-group">
+
+            <label for="date_transaction">
+                Date
+            </label>
+
+            <input
+                type="date"
+                id="date_transaction"
+                name="date_transaction"
+                value="{{ transaction.date_transaction if transaction else '' }}"
+                required
+            >
+
+        </div>
+
+
+        <!-- BOUTONS -->
+        <div class="form-actions">
+
+            <a
+                href="{{ url_for('transactions') }}"
+                class="btn btn--secondary"
+            >
+                Annuler
+            </a>
+
+            <button
+                type="submit"
+                class="btn btn--primary"
+            >
+
+                {% if transaction %}
+                    Enregistrer les modifications
+                {% else %}
+                    Ajouter la transaction
+                {% endif %}
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

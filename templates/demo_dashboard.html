@@ -1,0 +1,214 @@
+{% extends "demo_base.html" %}
+
+{% block title %}Business Dashboard — Démonstration{% endblock %}
+
+{% block page_title %}Business Dashboard{% endblock %}
+
+{% block page_subtitle %}
+<p class="topbar__subtitle">
+    Démonstration interactive — données fictives
+</p>
+{% endblock %}
+
+{% block content %}
+
+<!-- =========================================================
+     BANNIÈRE DÉMONSTRATION
+     ========================================================= -->
+
+<div class="demo-banner">
+    <strong>Mode démonstration</strong>
+    <span>
+        Les données affichées sont entièrement fictives.
+    </span>
+</div>
+
+
+<!-- =========================================================
+     STATISTIQUES
+     ========================================================= -->
+
+<section class="cards" aria-label="Chiffres clés">
+
+    <article class="card card--revenue">
+        <p class="card__label">Chiffre d'affaires</p>
+        <p class="card__value">
+            {{ stats.revenus | fcfa }}
+        </p>
+        <p class="card__hint">
+            Revenus enregistrés
+        </p>
+    </article>
+
+
+    <article class="card card--expense">
+        <p class="card__label">Dépenses</p>
+        <p class="card__value">
+            {{ stats.depenses | fcfa }}
+        </p>
+        <p class="card__hint">
+            Dépenses enregistrées
+        </p>
+    </article>
+
+
+    <article class="card card--profit">
+        <p class="card__label">Bénéfice</p>
+        <p class="card__value">
+            {{ stats.benefice | fcfa }}
+        </p>
+        <p class="card__hint">
+            Résultat financier
+        </p>
+    </article>
+
+
+    <article class="card card--count">
+        <p class="card__label">Transactions</p>
+        <p class="card__value">
+            {{ stats.transactions }}
+        </p>
+        <p class="card__hint">
+            Mouvements enregistrés
+        </p>
+    </article>
+
+</section>
+
+
+<!-- =========================================================
+     GRAPHIQUES
+     ========================================================= -->
+
+<section class="charts" aria-label="Analyse financière">
+
+
+    <!-- REVENUS -->
+
+    <article class="panel panel--wide">
+
+        <header class="panel__head">
+            <h2 class="panel__title">
+                Évolution du chiffre d'affaires
+            </h2>
+
+            <p class="panel__hint">
+                Revenus encaissés par mois
+            </p>
+        </header>
+
+        <div class="chart">
+            <canvas id="chartRevenus"></canvas>
+        </div>
+
+    </article>
+
+
+    <!-- DÉPENSES -->
+
+    <article class="panel panel--wide">
+
+        <header class="panel__head">
+            <h2 class="panel__title">
+                Évolution des dépenses
+            </h2>
+
+            <p class="panel__hint">
+                Sorties d'argent par mois
+            </p>
+        </header>
+
+        <div class="chart">
+            <canvas id="chartDepenses"></canvas>
+        </div>
+
+    </article>
+
+
+    <!-- BÉNÉFICE -->
+
+    <article class="panel">
+
+        <header class="panel__head">
+            <h2 class="panel__title">
+                Évolution du bénéfice
+            </h2>
+
+            <p class="panel__hint">
+                Revenus moins dépenses
+            </p>
+        </header>
+
+        <div class="chart">
+            <canvas id="chartBenefice"></canvas>
+        </div>
+
+    </article>
+
+
+    <!-- CATÉGORIES -->
+
+    <article class="panel">
+
+        <header class="panel__head">
+            <h2 class="panel__title">
+                Répartition des dépenses
+            </h2>
+
+            <p class="panel__hint">
+                Dépenses par catégorie
+            </p>
+        </header>
+
+        <div class="chart">
+            <canvas id="chartCategories"></canvas>
+        </div>
+
+    </article>
+
+</section>
+
+
+<!-- =========================================================
+     INFORMATIONS
+     ========================================================= -->
+
+<section class="panel demo-info">
+
+    <header class="panel__head">
+        <h2 class="panel__title">
+            À propos de cette démonstration
+        </h2>
+    </header>
+
+    <div class="demo-info__content">
+
+        <p>
+            Cette interface présente un exemple de solution
+            de gestion financière destinée aux entreprises,
+            entrepreneurs et indépendants.
+        </p>
+
+        <p>
+            La version présentée utilise uniquement des données
+            fictives à des fins de démonstration.
+        </p>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     DONNÉES POUR CHART.JS
+     ========================================================= -->
+
+<script id="dashboard-data" type="application/json">
+    {{ charts | tojson }}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord — Business Dashboard{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block page_subtitle %}
+  <p class="topbar__subtitle">Situation financière de votre activité</p>
+{% endblock %}
+
+{% block content %}
+
+<!-- ====================== CARTES STATISTIQUES ====================== -->
+<section class="cards" aria-label="Chiffres clés">
+
+  <article class="card card--revenue">
+    <p class="card__label">Chiffre d'affaires</p>
+    <p class="card__value">{{ stats.revenus | fcfa }}</p>
+    <p class="card__hint">Somme de tous les revenus enregistrés</p>
+  </article>
+
+  <article class="card card--expense">
+    <p class="card__label">Dépenses</p>
+    <p class="card__value">{{ stats.depenses | fcfa }}</p>
+    <p class="card__hint">Somme de toutes les dépenses enregistrées</p>
+  </article>
+
+  <article class="card {% if stats.benefice >= 0 %}card--profit{% else %}card--loss{% endif %}">
+    <p class="card__label">Bénéfice</p>
+    <p class="card__value">{{ stats.benefice | fcfa }}</p>
+    <p class="card__hint">
+      {% if stats.benefice >= 0 %}Revenus supérieurs aux dépenses{% else %}Dépenses supérieures aux revenus{% endif %}
+    </p>
+  </article>
+
+  <article class="card card--count">
+    <p class="card__label">Transactions</p>
+    <p class="card__value">{{ stats.transactions }}</p>
+    <p class="card__hint">Mouvements enregistrés au total</p>
+  </article>
+
+</section>
+
+<!-- ============================ GRAPHIQUES ============================ -->
+{% if charts and charts.mois %}
+<section class="charts" aria-label="Graphiques">
+
+  <article class="panel panel--wide">
+    <header class="panel__head">
+      <h2 class="panel__title">Évolution du chiffre d'affaires</h2>
+      <p class="panel__hint">Revenus encaissés par mois</p>
+    </header>
+    <div class="chart"><canvas id="chartRevenus" role="img"
+      aria-label="Courbe des revenus mensuels"></canvas></div>
+  </article>
+
+  <article class="panel panel--wide">
+    <header class="panel__head">
+      <h2 class="panel__title">Évolution des dépenses</h2>
+      <p class="panel__hint">Sorties d'argent par mois</p>
+    </header>
+    <div class="chart"><canvas id="chartDepenses" role="img"
+      aria-label="Courbe des dépenses mensuelles"></canvas></div>
+  </article>
+
+  <article class="panel">
+    <header class="panel__head">
+      <h2 class="panel__title">Évolution du bénéfice</h2>
+      <p class="panel__hint">Revenus moins dépenses, mois par mois</p>
+    </header>
+    <div class="chart"><canvas id="chartBenefice" role="img"
+      aria-label="Bénéfice mensuel"></canvas></div>
+  </article>
+
+  <article class="panel">
+    <header class="panel__head">
+      <h2 class="panel__title">Répartition des dépenses</h2>
+      <p class="panel__hint">Part de chaque catégorie</p>
+    </header>
+    <div class="chart"><canvas id="chartCategories" role="img"
+      aria-label="Répartition des dépenses par catégorie"></canvas></div>
+  </article>
+
+</section>
+{% else %}
+<section class="empty" aria-label="Graphiques">
+  <h2 class="empty__title">Pas encore de données à représenter</h2>
+  <p class="empty__text">
+    Les graphiques apparaîtront dès que des revenus ou des dépenses seront enregistrés.
+  </p>
+</section>
+{% endif %}
+
+<!-- ====================== DERNIÈRES TRANSACTIONS ====================== -->
+<section class="panel" aria-label="Dernières transactions">
+  <header class="panel__head">
+    <h2 class="panel__title">Dernières transactions</h2>
+    <p class="panel__hint">Les mouvements les plus récents</p>
+  </header>
+
+  {% if transactions %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Date</th>
+          <th scope="col">Description</th>
+          <th scope="col">Type</th>
+          <th scope="col">Catégorie</th>
+          <th scope="col" class="is-right">Montant</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in transactions %}
+        <tr>
+          <td data-label="Date">
+            <time datetime="{{ t.date_transaction }}">
+              {{ t.date_transaction.strftime('%d/%m/%Y') if t.date_transaction.strftime is defined else t.date_transaction }}
+            </time>
+          </td>
+          <td data-label="Description">{{ t.description }}</td>
+          <td data-label="Type">
+            <span class="badge badge--{{ 'revenue' if t.type == 'revenu' else 'expense' }}">
+              {{ 'Revenu' if t.type == 'revenu' else 'Dépense' }}
+            </span>
+          </td>
+          <td data-label="Catégorie">{{ t.categorie if t.categorie else '—' }}</td>
+          <td data-label="Montant"
+              class="is-right amount amount--{{ 'revenue' if t.type == 'revenu' else 'expense' }}">
+            {{ '+' if t.type == 'revenu' else '−' }}{{ t.montant | fcfa }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty empty--inline">
+    <h3 class="empty__title">Aucune transaction enregistrée</h3>
+    <p class="empty__text">
+      Ajoutez un premier revenu ou une première dépense dans la base pour voir vos chiffres ici.
+    </p>
+  </div>
+  {% endif %}
+</section>
+
+{% endblock %}
+
+
+{% block scripts %}
+{# Les données sont transmises à JavaScript via un bloc JSON :
+   plus sûr et plus lisible que d'injecter du Jinja dans du code JS. #}
+<script id="dashboard-data" type="application/json">{{ charts | tojson }}</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+{% endblock %}

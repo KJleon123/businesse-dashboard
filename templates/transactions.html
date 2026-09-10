@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions — Business Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Transactions</h1>
+        <p>Gérez vos revenus et vos dépenses.</p>
+    </div>
+
+    <a href="{{ url_for('add_transaction') }}" class="btn btn--primary">
+        + Ajouter une transaction
+    </a>
+</div>
+
+
+<!-- FILTRES -->
+<div class="filters">
+    <a href="{{ url_for('transactions') }}"
+       class="filter {% if filtre == 'toutes' %}active{% endif %}">
+        Toutes
+    </a>
+
+    <a href="{{ url_for('transactions', type='revenu') }}"
+       class="filter {% if filtre == 'revenu' %}active{% endif %}">
+        Revenus
+    </a>
+
+    <a href="{{ url_for('transactions', type='depense') }}"
+       class="filter {% if filtre == 'depense' %}active{% endif %}">
+        Dépenses
+    </a>
+</div>
+
+
+<!-- TABLEAU -->
+<div class="card">
+
+    <div class="card-header">
+        <h2>Historique des transactions</h2>
+        <span>{{ transactions|length }} transaction(s)</span>
+    </div>
+
+    <div class="table-container">
+
+        <table class="transactions-table">
+
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Catégorie</th>
+                    <th>Type</th>
+                    <th>Montant</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for transaction in transactions %}
+
+                <tr>
+
+                    <td>
+                        <strong>{{ transaction.description }}</strong>
+                    </td>
+
+                    <td>
+                        {{ transaction.categorie }}
+                    </td>
+
+                    <td>
+                        {% if transaction.type == "revenu" %}
+                            <span class="badge badge--success">
+                                Revenu
+                            </span>
+                        {% else %}
+                            <span class="badge badge--danger">
+                                Dépense
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if transaction.type == "revenu" %}
+                            <strong class="amount-positive">
+                                +{{ transaction.montant|fcfa }}
+                            </strong>
+                        {% else %}
+                            <strong class="amount-negative">
+                                -{{ transaction.montant|fcfa }}
+                            </strong>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {{ transaction.date_transaction }}
+                    </td>
+
+                    <td class="actions">
+
+                        <a href="{{ url_for('edit_transaction', transaction_id=transaction.id) }}"
+                           class="btn-action">
+                            Modifier
+                        </a>
+
+                        <a href="{{ url_for('delete_transaction', transaction_id=transaction.id) }}"
+                           class="btn-action btn-action--danger">
+                            Supprimer
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        Aucune transaction.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

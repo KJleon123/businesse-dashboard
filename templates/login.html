@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion — Business Dashboard{% endblock %}
+{% block body_class %}page-auth{% endblock %}
+
+{# La page de connexion remplace entièrement la coquille (pas de sidebar). #}
+{% block layout %}
+<div class="auth">
+
+  <section class="auth__panel" aria-hidden="true">
+    <a class="brand brand--light" href="{{ url_for('login') }}">
+      <span class="brand__mark">BD</span>
+      <span class="brand__name">Business Dashboard</span>
+    </a>
+    <p class="auth__pitch">
+      Vos revenus, vos dépenses et votre bénéfice réunis sur un seul écran.
+    </p>
+    <dl class="auth__points">
+      <div>
+        <dt>Suivi en temps réel</dt>
+        <dd>Chaque transaction met à jour vos totaux.</dd>
+      </div>
+      <div>
+        <dt>Montants en FCFA</dt>
+        <dd>Aucune conversion, aucun calcul manuel.</dd>
+      </div>
+      <div>
+        <dt>Accessible partout</dt>
+        <dd>Ordinateur, tablette ou téléphone.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <main class="auth__main">
+    <div class="auth__card">
+
+      <a class="brand brand--compact" href="{{ url_for('login') }}">
+        <span class="brand__mark">BD</span>
+        <span class="brand__name">Business Dashboard</span>
+      </a>
+
+      <h1 class="auth__title">Connexion</h1>
+      <p class="auth__lead">Entrez vos identifiants pour accéder à votre tableau de bord.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <p class="alert alert--{{ category }}" role="status">{{ message }}</p>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% if error %}
+        <p class="alert alert--error" role="alert">{{ error }}</p>
+      {% endif %}
+
+    <form class="form" method="POST" action="{{ url_for('login') }}">
+
+        <div class="field">
+            <label for="email">Adresse e-mail</label>
+            <input
+                type="email"
+                id="email"
+                name="email"
+                value="{{ email or '' }}"
+                placeholder="admin@test.com"
+                required
+                autocomplete="email"
+            >
+        </div>
+
+        <div class="field">
+            <label for="password">Mot de passe</label>
+            <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Votre mot de passe"
+                required
+                autocomplete="current-password"
+            >
+        </div>
+
+        {% if error %}
+            <div class="alert alert--error">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn--primary btn--block">
+            Se connecter
+        </button>
+
+    </form>
+
+    </div>
+  </main>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Afficher / masquer le mot de passe.
+  (function () {
+    var btn = document.getElementById('togglePassword');
+    var input = document.getElementById('password');
+    if (!btn || !input) return;
+
+    btn.addEventListener('click', function () {
+      var shown = input.type === 'text';
+      input.type = shown ? 'password' : 'text';
+      btn.textContent = shown ? 'Afficher' : 'Masquer';
+      btn.setAttribute('aria-pressed', String(!shown));
+      input.focus();
+    });
+  })();
+</script>
+{% endblock %}
